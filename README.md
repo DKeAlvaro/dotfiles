@@ -1,28 +1,35 @@
-# dotfiles — portable setup
+# dotfiles — setup portable de Álvaro
 
-Everything needed to reconstruct Alvaro's agent setup on a new machine
-(Termux phone, laptop, new VPS, Raspberry Pi).
+Repo público. Cero secretos: las API keys viven en el VPS y se copian por SSH.
 
-## New machine (phone/laptop)
+## El comando único (no memorices nada más)
 
 ```
-pkg install -y git   # or apt
 git clone https://github.com/DKeAlvaro/dotfiles && cd dotfiles
-bash bootstrap.sh            # optional arg: VPS ip/hostname
+bash bootstrap.sh <target>
 ```
-That's it. Installs ssh keys, connects to the VPS, clones the memory
-vault, pulls Pi config from the VPS, links memory. Secrets never touch
-this repo (pulled from the VPS over SSH).
 
-## New VPS / Raspberry Pi (the brain)
+### Targets: qué eres tú ahora
 
-The brain is: git vault (memory) + this repo (setup) + GitHub.
-1. Install pi + openssh-server on the new box.
-2. `bash bootstrap.sh <new-box-ip>` from any configured machine, or on the
-   box itself run bootstrap and then restore /root from the old VPS or
-   re-run the pi-config pull (step 8 of bootstrap.sh).
-3. Update `Host vps` / bootstrap default IP when migrating.
+| Target | Cuándo | Qué hace |
+|---|---|---|
+| `client` | PC nuevo / portátil, solo quieres conectarte | genera clave ssh, la autoriza en el VPS, crea el alias `ssh vps` |
+| `termux` | móvil nuevo con Termux, setup COMPLETO como el actual | todo lo de client + instala pi, clona el vault de memoria (pide PAT), enlaza MEMORY.md, copia extensiones/config de pi desde el VPS, instala tunnel.sh y `auth` |
+| `server` | VPS nuevo o Raspberry Pi (el cerebro) | instala tmux+conf, pi+extensiones, privoxy (proxy del móvil), cron, clona vault; keys de pi se copian desde el VPS viejo si hay ssh |
 
-## Contents
-- bootstrap.sh   one-shot new-machine setup
-- tunnel.sh      phone reverse-proxy tunnel (VPS uses phone IP)
+### Notas
+
+- El script pide interacción solo si: la clave aún no está autorizada en el
+  VPS (te da la línea exacta para ejecutar en una máquina ya configurada) o
+  al clonar el vault privado (PAT de GitHub, una vez).
+- Tú no guardas ni recuerdas keys: `models.json` (con las API keys) vive en
+  el VPS y viaja por SSH al montar pi en una máquina nueva.
+- Claves ssh: se GENERAN nuevas por máquina, nunca se copian.
+
+## Migrar a otro VPS / Raspberry Pi
+
+1. Caja nueva: `bash bootstrap.sh server <ip-nueva>`
+2. Mover lo que no está en git: `~/.canvas/cookies.json`, y haz push de los
+   repos de `~/projects` que no tengan remote.
+3. En el móvil: cambia la IP en `~/.ssh/config` (Host vps). El tunnel.sh
+   reconecta solo.
